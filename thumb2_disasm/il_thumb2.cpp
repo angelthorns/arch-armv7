@@ -1351,8 +1351,39 @@ bool GetLowLevelILForNEONInstruction(Architecture* arch, LowLevelILFunction& il,
 	case armv7::ARMV7_VEOR:
 		il.AddInstruction(WriteArithOperand(il, instr, il.Xor(GetRegisterSize(instr, 0), ReadILOperand(il, instr, 1), ReadILOperand(il, instr, 2))));
 		break;
+	case ARMV7_VMOV:
+		il.AddInstruction(WriteILOperand(il, instr, 0, ReadILOperand(il, instr, 1)));
+		break;
+	case ARMV7_VMUL:
+		il.AddInstruction(WriteArithOperand(il, instr, il.FloatMult(GetRegisterSize(instr, 0),
+			ReadILOperand(il, instr, 1), ReadILOperand(il, instr, 2))));
+		break;
 	case armv7::ARMV7_VSUB:
 		il.AddInstruction(WriteArithOperand(il, instr, il.Sub(GetRegisterSize(instr, 0), ReadILOperand(il, instr, 1), ReadILOperand(il, instr, 2))));
+		break;
+	case armv7::ARMV7_VLDR:
+		if (instr->format->operandCount == 3)
+		{
+			uint32_t reg = GetRegisterByIndex(instr->fields[instr->format->operands[1].field0]);
+			il.AddInstruction(WriteILOperand(il, instr, 0, il.Load(4, GetMemoryAddress(il, instr, 1, 4, false))));
+			il.AddInstruction(il.SetRegister(4, reg, il.Add(4, il.Register(4, reg), ReadILOperand(il, instr, 2))));
+		}
+		else
+		{
+			il.AddInstruction(WriteILOperand(il, instr, 0, il.Load(4, GetMemoryAddress(il, instr, 1, 4))));
+		}
+		break;
+	case armv7::ARMV7_VSTR:
+		if (instr->format->operandCount == 3)
+		{
+			uint32_t reg = GetRegisterByIndex(instr->fields[instr->format->operands[1].field0]);
+			il.AddInstruction(il.Store(4, GetMemoryAddress(il, instr, 1, 4, false), ReadILOperand(il, instr, 0)));
+			il.AddInstruction(il.SetRegister(4, reg, il.Add(4, il.Register(4, reg), ReadILOperand(il, instr, 2))));
+		}
+		else
+		{
+			il.AddInstruction(il.Store(4, GetMemoryAddress(il, instr, 1, 4), ReadILOperand(il, instr, 0)));
+		}
 		break;
 	default:
 		il.AddInstruction(il.Unimplemented());
